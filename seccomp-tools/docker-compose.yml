@@ -1,0 +1,11 @@
+version: "3.9"  # optional since v1.27.0
+services:
+  default:
+    build: .
+    ports:
+      - "3333:3333"
+    volumes:
+      - .:/ctf
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+
