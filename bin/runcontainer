@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+
+"""
+Easily run container from the current directory.
+
+Returns 0 if operation is successfull. Otherwise, here is the list of error
+codes:
+
+- 1: Target container is not valid
+- 2: No container available
+
+"""
+
+import argparse
+from pathlib import Path
+import os
+import sys
+
+
+def list_containers(err):
+    """List available containers to run.
+
+    Based on the idea that the docker-compose file is compatible.
+
+    """
+    found = False
+    for entry in Path(".").glob("*"):
+
+        if not entry.is_dir():
+            continue
+        if entry.joinpath("docker-compose.yml").exists():
+            print(entry.name)
+            found = True
+
+    if not found:
+        print("No container found. Try fetching one first")
+        sys.exit(2)
+    sys.exit(err)
+
+
+CMD = "docker-compose run "
+SERVICE = "default"
+
+parser = argparse.ArgumentParser(description="Fetch container in local directory.")
+
+parser.add_argument(
+    "-d",
+    "--detach",
+    required=False,
+    action="store_true",
+    help="Running in background.",
+)
+parser.add_argument(
+    "-B",
+    "--no-build",
+    dest="nobuild",
+    required=False,
+    action="store_true",
+    help="Disable force build the container before running it.",
+)
+parser.add_argument(
+    "-k",
+    "--keep",
+    required=False,
+    action="store_true",
+    help="Keep container after using it",
+)
+parser.add_argument(
+    "name",
+    nargs="?",
+    help="Name of the container to run. Empty to list",
+)
+args = parser.parse_args()
+
+if not args.name:
+    list_containers(0)
+
+# Validate the target container fullfil the minimum requirements
+target = Path(args.name)
+if not target.joinpath("docker-compose.yml").exists():
+    print(f"ERROR: Container {target} is not a valid target")
+    print("Here is the list of hopefully valid containers:")
+    list_containers(1)
+
+if not args.nobuild:
+    os.system(f"cd {target} && docker-compose build")
+
+run_command = f"{CMD} {SERVICE}"
+if args.detach:
+    run_command = f"{CMD} -d {SERVICE}"
+
+os.system(f"cd {target} && {run_command}")
+
+if not args.keep:
+    os.system(f"cd {target} && docker-compose rm -f")

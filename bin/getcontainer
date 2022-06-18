@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+
+"""
+Easily fetch container files in the current directory.
+
+Returns 0 if operation is successfull. Otherwise, here is the list of error
+codes:
+
+- 1: Target container does not exist in the repository
+- 2: No container available
+- 3: Dockerfile or docker-compose.yml file already exist in local directory
+
+"""
+
+import argparse
+from pathlib import Path
+import shutil
+import sys
+
+
+def list_containers(err):
+    """List available containers from the current repository."""
+    found = False
+    for entry in containers_path.glob("*"):
+
+        if not entry.is_dir() or entry.name in (".git", "bin"):
+            continue
+
+        print(entry.name)
+        found = True
+
+    if not found:
+        print("No container found, which is highly unexpected.")
+        sys.exit(2)
+    sys.exit(err)
+
+
+parser = argparse.ArgumentParser(description="Fetch container in local directory.")
+
+parser.add_argument(
+    "name",
+    nargs="?",
+    help="Name of the container to fetch. Empty to list",
+)
+
+
+args = parser.parse_args()
+containers_path = Path(__file__).parents[1]
+
+if not args.name:
+    list_containers(0)
+
+
+# Make sure the target container is available
+target = args.name
+if not containers_path.joinpath(target).exists():
+    print(f"ERROR: Container {target} does not exist")
+    print("Here is the list of available containers:")
+    list_containers(1)
+
+# Check if a Dockerfile or docker-compose files exist locally ?
+dup = False
+if Path(".").joinpath("Dockerfile").exists():
+    print("ERROR: Dockerfile file already exists in current directory")
+    dup = True
+if Path(".").joinpath("docker-compose.yml").exists():
+    print("ERROR: docker-compose.yml file already exists in current directory")
+    dup = True
+if dup:
+    print("Exiting.")
+    sys.exit(2)
+
+Path(target).mkdir(exist_ok=False)
+for f in containers_path.joinpath(target).glob("*"):
+
+    # Allow for unusual files to already exist in the current directory
+    if Path(f"./{target}/{f.name}").exists():
+        print(f"WARNING: Skipping {f.name}. Already exists locally.")
+        continue
+    print(f"Fetching {f.name}")
+    shutil.copy(f, f"./{target}/{f.name}")
