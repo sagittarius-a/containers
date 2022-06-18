@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  default:
+    build: .
+    ports:
+      - "3334:3334"
+    volumes:
+      - share_volume:/share:rw
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+
+volumes:
+  share_volume:
+    external: true
+    name: share
