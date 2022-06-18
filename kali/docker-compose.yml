@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  default:
+    image: kalilinux/kali-rolling
+    ports:
+      - "4000-5000:4000-5000"
+      - "7777:7777"
+    volumes:
+      - share_volume:/share:rw
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+
+volumes:
+  share_volume:
+    external: true
+    name: share
