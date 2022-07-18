@@ -24,7 +24,7 @@ def list_containers(err):
 
     """
     found = False
-    for entry in Path(".").glob("*"):
+    for entry in Path(__file__).parents[1].glob("*"):
 
         if not entry.is_dir():
             continue
@@ -59,6 +59,17 @@ parser.add_argument(
     help="Disable force build the container before running it.",
 )
 parser.add_argument(
+    "-n",
+    "--no-files",
+    dest="nofiles",
+    required=False,
+    action="store_true",
+    help=(
+        "Run the container without looking up files locally."
+        " Use files directly from the repository."
+    ),
+)
+parser.add_argument(
     "-k",
     "--keep",
     required=False,
@@ -75,8 +86,12 @@ args = parser.parse_args()
 if not args.name:
     list_containers(0)
 
+if args.nofiles:
+    target = Path(Path(__file__).parents[1]) / Path(args.name)
+else:
+    target = Path(args.name)
+
 # Validate the target container fullfil the minimum requirements
-target = Path(args.name)
 if not target.joinpath("docker-compose.yml").exists():
     print(f"ERROR: Container {target} is not a valid target")
     print("Here is the list of hopefully valid containers:")
